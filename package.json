@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "Backend Server",
   "main": "index.js",
-  "author": "",
+  "author": "MA",
   "license": "MIT",
   "engines": {
     "node": ">=20.x"
