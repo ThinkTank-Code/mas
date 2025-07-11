@@ -1,7 +1,7 @@
 {
   "name": "ma-server",
   "version": "0.0.1",
-  "description": "PrismaXpress is a backend starter template using TypeScript, Express.js, Prisma ORM, and PostgreSQL. It follows the modular pattern and includes essential middleware, utility functions.",
+  "description": "Backend Server",
   "main": "index.js",
   "author": "Fahim Ahammed Firoz",
   "license": "MIT",
