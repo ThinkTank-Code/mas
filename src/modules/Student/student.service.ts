@@ -142,7 +142,7 @@ const validate = async (data: any) => {
 
 
 const webhook = async (payload: any) => {
-    console.log("Payload: ", payload);
+    console.log("Payload:", payload);
     if (!payload || !payload?.status || payload?.status !== 'VALID') {
         return {
             massage: 'Invalid Payment!'
