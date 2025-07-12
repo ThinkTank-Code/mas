@@ -120,7 +120,7 @@ const enrollStudent = async (payload: any) => {
     } catch (error) {
         await session.abortTransaction();
         session.endSession();
-        console.error("Enrollment failed::::", error);
+        console.error("Enrollment failed:::", error);
         throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 };
