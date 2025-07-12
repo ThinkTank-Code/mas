@@ -136,7 +136,7 @@ const validate = async (data: any) => {
         return response.data;
     }
     catch (err) {
-        throw new ApiError(StatusCodes.BAD_REQUEST, "Payment error")
+        throw new ApiError(StatusCodes.BAD_REQUEST, "Payment error!")
     }
 }
 
