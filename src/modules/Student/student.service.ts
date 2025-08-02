@@ -199,7 +199,7 @@ const webhook = async (payload: any) => {
 
     if (result?.status !== 'VALID') {
         return {
-            massage: 'Payment failed'
+            massage: 'Payment failed!'
         }
     }
 
