@@ -8,7 +8,9 @@ export const adminRegisterSchema = z.object({
     role: z.enum([Role.ADMIN, Role.SUPERADMIN]).optional(),
 });
 
-export const adminLoginSchema = z.object({
-    email: z.string().email(),
-    password: z.string().min(1),
+export const loginValidationSchema = z.object({
+    body: z.object({
+        email: z.string().email({ message: 'Invalid email' }),
+        password: z.string().min(6, { message: 'Password must be at least 8 characters' }),
+    }),
 });

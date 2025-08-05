@@ -12,6 +12,9 @@ const EnvSchema = z.object({
 
     SUPER_ADMIN_EMAIL: z.string(),
     SUPER_ADMIN_PASSWORD: z.string(),
+
+    JWT_SECRET: z.string(),
+    JWT_EXPIRY: z.string()
 });
 
 // Validate and parse environment variables
