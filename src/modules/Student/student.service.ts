@@ -56,8 +56,6 @@ const enrollStudent = async (payload: any) => {
             { session }
         );
 
-        console.log("payment ------- ", payment)
-
         // 5. Init payment at SSLCommerz (outside transaction)
         const sslCommerzPayload = {
             store_id: env.SSL_STORE_ID,
