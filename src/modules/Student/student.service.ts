@@ -18,7 +18,6 @@ const enrollStudent = async (payload: any) => {
 
         // 1. Find current batch (with session)
         const batch = await BatchModel.findOne({ isCurrent: true }).session(session);
-        console.log("batch ------- ", batch)
         if (!batch) {
             throw new ApiError(StatusCodes.NOT_FOUND, "No current batch found!")
         }
