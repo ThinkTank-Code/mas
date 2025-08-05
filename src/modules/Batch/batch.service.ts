@@ -10,7 +10,8 @@ export const BatchService = {
             throw new ApiError(StatusCodes.CONFLICT, "Batch already exists!");
         }
         const batchData = {
-            title: data.title
+            title: data.title,
+            courseFee: data.courseFee
         }
         return await BatchModel.create(batchData);
     },

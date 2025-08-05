@@ -6,6 +6,7 @@ export interface IBatch extends Document {
     title: string;
     status: BatchStatus;
     isCurrent: boolean;
+    courseFee: number;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -26,6 +27,11 @@ const batchSchema = new Schema<IBatch>(
         isCurrent: {
             type: Boolean,
             default: false,
+        },
+        courseFee: {
+            type: Number,
+            required: true,
+            min: 0,
         },
     },
     {
