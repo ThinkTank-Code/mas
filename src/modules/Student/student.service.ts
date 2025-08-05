@@ -24,7 +24,6 @@ const enrollStudent = async (payload: any) => {
 
         // 2. Generate student id
         const studentId = await generateStudentId(batch);
-        console.log("studentid ------- ", studentId);
 
         // 3. Create student (with session)
         const student = await StudentModel.create(
