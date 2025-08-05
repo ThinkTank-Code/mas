@@ -3,6 +3,7 @@ import app from './app';
 import env from './config/env';
 import { logger } from './config/logger';
 import { connectDB } from './config/database';
+import { seedSuperAdmin } from './scripts/seedSuperAdmin';
 
 let server: Server | null = null;
 
@@ -17,7 +18,7 @@ async function startServer() {
         server.listen(env.PORT, () => {
             console.log(`🚀 Server is running on port ${env.PORT}`);
         });
-
+        await seedSuperAdmin();
         handleProcessEvents();
     } catch (error) {
         console.error('❌ Error during server startup:', error);

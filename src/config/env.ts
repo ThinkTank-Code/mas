@@ -1,49 +1,30 @@
-import dotenv from 'dotenv';
+import "dotenv/config";
+import { z } from "zod";
+import ApiError from "../errors/ApiError";
 
-dotenv.config();
+// Define the environment schema with validation
+const EnvSchema = z.object({
+    // General
+    PORT: z.string().default("3000"),
+    NODE_ENV: z.enum(["development", "production", "stage"]),
+    // Database
+    MONGO_URI: z.string(),
 
-// Define the shape of the environment configuration
-interface EnvConfig {
-    PORT: string;
-    DATABASE_URL: string;
-    NODE_ENV: 'development' | 'production' | 'test';
-    JWT_SECRET: string;
-    JWT_EXPIRY: string;
-    LOG_LEVEL: 'info' | 'debug' | 'warn' | 'error';
-    // Add more environment variables as needed
+    SUPER_ADMIN_EMAIL: z.string(),
+    SUPER_ADMIN_PASSWORD: z.string(),
+});
+
+// Validate and parse environment variables
+const parsedEnv = EnvSchema.safeParse(process.env);
+
+if (!parsedEnv.success) {
+    const errorMessage = parsedEnv.error.issues
+        .map((issue) => `❌ ${issue.path.join(".")}: ${issue.message}`)
+        .join("\n");
+
+    throw new ApiError(500, `Environment variables validation failed:\n${errorMessage}`);
 }
 
-// Function to load environment variables and validate their existence
-const loadEnvVariables = (): EnvConfig => {
-    const requiredEnvVars: (keyof EnvConfig)[] = [
-        'PORT',
-        'DATABASE_URL',
-        'NODE_ENV',
-        'JWT_SECRET',
-        'JWT_EXPIRY',
-        'LOG_LEVEL'
-    ];
 
-    // Check if all required environment variables are set
-    requiredEnvVars.forEach((key) => {
-        if (!process.env[key]) {
-            throw new Error(`Missing required environment variable: ${key}`);
-        }
-    });
-
-    // Return the validated environment variables
-    return {
-        PORT: process.env.PORT || '3000',
-        DATABASE_URL: process.env.DATABASE_URL!,
-        NODE_ENV: process.env.NODE_ENV as 'development' | 'production' | 'test',
-        JWT_SECRET: process.env.JWT_SECRET!,
-        JWT_EXPIRY: process.env.JWT_EXPIRY || '1h',
-        LOG_LEVEL: (process.env.LOG_LEVEL || 'info') as 'info' | 'debug' | 'warn' | 'error'
-    };
-};
-
-// Call the function to load and validate the environment variables
-const env = loadEnvVariables();
-
-// Export the validated environment variables
+const env = parsedEnv.data;
 export default env;
