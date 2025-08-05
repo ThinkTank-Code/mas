@@ -18,7 +18,7 @@ async function startServer() {
         server.listen(env.PORT, () => {
             console.log(`🚀 Server is running on port ${env.PORT}`);
         });
-        await seedSuperAdmin();
+        // await seedSuperAdmin();
         handleProcessEvents();
     } catch (error) {
         console.error('❌ Error during server startup:', error);

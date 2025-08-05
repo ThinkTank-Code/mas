@@ -4,6 +4,8 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
+import router from './routes';
+import globalErrorHandler from './middlewares/globalErrorHandler';
 
 const app = express();
 
@@ -18,10 +20,13 @@ app.use(express.json());        // Parse incoming JSON requests
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }));
 
 // Routes
+app.use('/api/v1', router);
 
 // Default route for testing
 app.get('/', (req, res) => {
     res.send('API is running');
 });
+
+app.use(globalErrorHandler)
 
 export default app;
