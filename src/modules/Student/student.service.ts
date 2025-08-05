@@ -67,7 +67,7 @@ const enrollStudent = async (payload: any) => {
             fail_url: `${process.env.SERVER_URL}/api/v1/payment/status?status=fail`,
             cancel_url: `${process.env.SERVER_URL}/api/v1/payment/status?status=cancel`,
             ipn_url: `${process.env.SERVER_URL}/api/v1/payment/ipn`,
-            product_name: `Course Fee for ${batch.title}`,
+            product_name: `Graphics Design Course - ${batch.title}`,
             cus_name: payload.name,
             cus_email: payload.email,
             cus_add1: payload.address,
