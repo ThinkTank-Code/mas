@@ -1,0 +1,71 @@
+import http, { Server } from 'http';
+import app from './app';
+import env from './config/env';
+import { logger } from './config/logger';
+import { connectDB } from './config/database';
+
+let server: Server | null = null;
+
+
+async function startServer() {
+    try {
+        await connectDB();
+        logger.info('Database connected');
+        console.log('✅ Database connected successfully');
+
+        server = http.createServer(app);
+        server.listen(env.PORT, () => {
+            console.log(`🚀 Server is running on port ${env.PORT}`);
+        });
+
+        handleProcessEvents();
+    } catch (error) {
+        console.error('❌ Error during server startup:', error);
+        process.exit(1);
+    }
+}
+
+/**
+ * Gracefully shutdown the server and close database connections.
+ * @param {string} signal - The termination signal received.
+ */
+async function gracefulShutdown(signal: string) {
+    console.warn(`🔄 Received ${signal}, shutting down gracefully...`);
+
+    if (server) {
+        server.close(async () => {
+            console.log('✅ HTTP server closed.');
+
+            try {
+                console.log('✅ Database connection closed.');
+            } catch (error) {
+                console.error('❌ Error closing database connection:', error);
+            }
+
+            process.exit(0);
+        });
+    } else {
+        process.exit(0);
+    }
+}
+
+/**
+ * Handle system signals and unexpected errors.
+ */
+function handleProcessEvents() {
+    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+    process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+    process.on('uncaughtException', (error) => {
+        console.error('💥 Uncaught Exception:', error);
+        gracefulShutdown('uncaughtException');
+    });
+
+    process.on('unhandledRejection', (reason) => {
+        console.error('💥 Unhandled Rejection:', reason);
+        gracefulShutdown('unhandledRejection');
+    });
+}
+
+// Start the application
+startServer();
