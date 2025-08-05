@@ -7,8 +7,10 @@ import { BatchModel } from "../Batch/batch.model";
 import { generateStudentId } from "./student.utils";
 import { PaymentModel } from "../Payment/payment.model";
 import env from "../../config/env";
+import ApiError from "../../errors/ApiError";
+import { StatusCodes } from "http-status-codes";
 
-export const enrollStudent = async (req: Request, res: Response) => {
+const enrollStudent = async (payload: any) => {
     const session = await mongoose.startSession();
 
     try {
@@ -16,23 +18,23 @@ export const enrollStudent = async (req: Request, res: Response) => {
 
         // 1. Find current batch (with session)
         const batch = await BatchModel.findOne({ isCurrent: true }).session(session);
+        console.log("batch ------- ", batch)
         if (!batch) {
-            await session.abortTransaction();
-            session.endSession();
-            return res.status(400).json({ message: "No current batch found" });
+            throw new ApiError(StatusCodes.NOT_FOUND, "No current batch found!")
         }
 
         // 2. Generate student id
         const studentId = await generateStudentId(batch);
+        console.log("studentid ------- ", studentId);
 
         // 3. Create student (with session)
         const student = await StudentModel.create(
             [
                 {
-                    name: req.body.name,
-                    email: req.body.email,
-                    phone: req.body.phone,
-                    address: req.body.address,
+                    name: payload.name,
+                    email: payload.email,
+                    phone: payload.phone,
+                    address: payload.address,
                     batch: batch._id,
                     studentId,
                     paymentStatus: "pending",
@@ -41,21 +43,24 @@ export const enrollStudent = async (req: Request, res: Response) => {
             { session }
         );
 
+        console.log("student ------- ", student)
+
         // 4. Create payment (with session)
         const transactionId = uuidv4();
 
         const payment = await PaymentModel.create(
             [
                 {
-                    student: student[0]._id,
+                    studentId: student[0]._id,
                     amount: batch.courseFee,
                     status: "pending",
                     transactionId,
-                    gateway: "sslcommerz",
                 },
             ],
             { session }
         );
+
+        console.log("payment ------- ", payment)
 
         // 5. Init payment at SSLCommerz (outside transaction)
         const sslCommerzPayload = {
@@ -69,38 +74,64 @@ export const enrollStudent = async (req: Request, res: Response) => {
             cancel_url: `${process.env.SERVER_URL}/api/v1/payment/status?status=cancel`,
             ipn_url: `${process.env.SERVER_URL}/api/v1/payment/ipn`,
             product_name: `Course Fee for ${batch.title}`,
-            cus_name: req.body.name,
-            cus_email: req.body.email,
-            cus_add1: req.body.address,
-            cus_phone: req.body.phone,
+            cus_name: payload.name,
+            cus_email: payload.email,
+            cus_add1: payload.address,
+            cus_phone: payload.phone,
+            shipping_method: 'N/A',
+            product_category: 'Online Course',
+            product_profile: 'general',
+            cus_add2: 'N/A',
+            cus_city: 'N/A',
+            cus_state: 'N/A',
+            cus_postcode: 'N/A',
+            cus_country: 'Bangladesh',
+            cus_fax: 'N/A',
+            ship_name: 'N/A',
+            ship_add1: 'N/A',
+            ship_add2: 'N/A',
+            ship_city: 'N/A',
+            ship_state: 'N/A',
+            ship_postcode: 1000,
+            ship_country: 'Bangladesh',
         };
 
-        const sslResponse = await axios.post(
-            "https://sandbox.sslcommerz.com/gwprocess/v4/api.php",
-            sslCommerzPayload
-        );
+        // const sslResponse = await axios.post(
+        //     "https://sandbox.sslcommerz.com/gwprocess/v3/api.php",
+        //     sslCommerzPayload
+        // );
+
+        const sslResponse = await axios({
+            method: 'post',
+            url: "https://sandbox.sslcommerz.com/gwprocess/v3/api.php",
+            data: sslCommerzPayload,
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        });
+
+        console.log("ssl res ------- ", sslResponse)
 
         if (!sslResponse.data?.GatewayPageURL) {
-            // Rollback if SSLCommerz failed
-            await session.abortTransaction();
-            session.endSession();
-            return res.status(500).json({ message: "Failed to initiate payment" });
+            throw new ApiError(StatusCodes.BAD_GATEWAY, "Failed to init payment!")
         }
 
         // Commit the transaction if all succeeded
         await session.commitTransaction();
         session.endSession();
 
-        return res.status(201).json({
-            message: "Student enrolled. Redirect to payment gateway.",
+        return {
             paymentUrl: sslResponse.data.GatewayPageURL,
             studentId,
             transactionId,
-        });
+        };
     } catch (error) {
         await session.abortTransaction();
         session.endSession();
         console.error("Enrollment failed:", error);
-        return res.status(500).json({ message: "Internal Server Error" });
+        throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 };
+
+
+export const StudentService = {
+    enrollStudent
+}
