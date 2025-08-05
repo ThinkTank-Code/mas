@@ -102,8 +102,6 @@ const enrollStudent = async (payload: any) => {
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
         });
 
-        console.log("ssl res ------- ", sslResponse)
-
         if (!sslResponse.data?.GatewayPageURL) {
             throw new ApiError(StatusCodes.BAD_GATEWAY, "Failed to init payment!")
         }
