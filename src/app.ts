@@ -14,7 +14,8 @@ app.use(cors());                // Enables Cross-Origin Resource Sharing
 app.use(helmet());              // Adds security headers to protect against vulnerabilities
 app.use(morgan('dev'));         // Logs HTTP requests for better monitoring
 app.use(compression());         // Compresses response bodies for faster delivery
-app.use(express.json());        // Parse incoming JSON requests
+app.use(express.urlencoded({ extended: true })); // FOR FORM DATA
+app.use(express.json()); // FOR JSON (not needed by SSLCommerz)
 
 // Rate Limiter
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }));

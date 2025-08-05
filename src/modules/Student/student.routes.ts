@@ -10,4 +10,6 @@ router.post(
     StudentController.enrollStudent
 );
 
+router.post('/ipn', StudentController.webhook)
+
 export const StudentRoutes = router;

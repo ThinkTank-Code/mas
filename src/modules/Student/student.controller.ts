@@ -14,8 +14,21 @@ const enrollStudent = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const webhook = catchAsync(async (req: Request, res: Response) => {
+    console.log("webhook called: ", req.body, req.query, req.params)
+    const result = await StudentService.webhook(req.body);
+
+    sendResponse(res, {
+        statusCode: 201,
+        success: true,
+        message: 'Webhook called successfully !',
+        data: result,
+    });
+});
+
 
 
 export const StudentController = {
-    enrollStudent
+    enrollStudent,
+    webhook
 }

@@ -7,6 +7,7 @@ export async function generateStudentId(batch: IBatch): Promise<string> {
 
     // Count existing students in the batch for serial
     const count = await StudentModel.countDocuments({ batch: batch._id });
+    console.log({ count })
 
     // Serial number padded to 3 digits, start from 1
     const serialNumber = (count + 1).toString().padStart(3, "0");

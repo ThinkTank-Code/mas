@@ -1,4 +1,4 @@
-import { Schema, model } from 'mongoose';
+import { Schema, Types, model } from 'mongoose';
 
 export interface IStudent {
     name: string;
@@ -7,6 +7,7 @@ export interface IStudent {
     address: string;
     phone: string;
     paymentStatus: 'pending' | 'success' | 'failed';
+    batch: Types.ObjectId;
 }
 
 const studentSchema = new Schema<IStudent>(
@@ -14,6 +15,11 @@ const studentSchema = new Schema<IStudent>(
         name: { type: String, required: true },
         email: { type: String, required: true },
         studentId: { type: String, required: true, unique: true },
+        batch: {
+            type: Schema.Types.ObjectId,
+            ref: 'Batch',
+            required: true,
+        },
         address: { type: String, required: true },
         phone: { type: String, required: true },
         paymentStatus: {
