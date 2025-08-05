@@ -41,8 +41,6 @@ const enrollStudent = async (payload: any) => {
             { session }
         );
 
-        console.log("student ------- ", student)
-
         // 4. Create payment (with session)
         const transactionId = uuidv4();
 
