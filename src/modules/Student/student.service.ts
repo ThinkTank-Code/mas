@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import mongoose from "mongoose";
+import mongoose, { FilterQuery } from "mongoose";
 import { StudentModel } from "./student.model";
 import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
@@ -9,6 +9,7 @@ import { PaymentModel } from "../Payment/payment.model";
 import env from "../../config/env";
 import ApiError from "../../errors/ApiError";
 import { StatusCodes } from "http-status-codes";
+import { GetStudentsParams, IStudent } from "./student.interface";
 
 const enrollStudent = async (payload: any) => {
     const session = await mongoose.startSession();
@@ -208,7 +209,62 @@ const webhook = async (payload: any) => {
 }
 
 
+// get all students (filtering, searching, pagination)
+const getAllStudents = async (params: GetStudentsParams) => {
+    const {
+        search,
+        paymentStatus,
+        batch,
+        page = 1,
+        limit = 10,
+        sortBy = 'createdAt',
+        sortOrder = 'desc'
+    } = params;
+
+    const filter: FilterQuery<IStudent> = {};
+
+    if (search) {
+        filter.$or = [
+            { name: { $regex: search, $options: 'i' } },
+            { email: { $regex: search, $options: 'i' } }
+        ]
+    }
+
+    if (paymentStatus) {
+        filter.paymentStatus = paymentStatus;
+    }
+
+    if (batch) {
+        filter.batch = batch;
+    }
+
+    const skip = (Number(page) - 1) * limit;
+
+    const sort: Record<string, 1 | -1> = {};
+    sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
+    const total = await StudentModel.countDocuments(filter);
+
+    const data = await StudentModel.find(filter)
+        .populate('batch')
+        .sort(sort)
+        .skip(skip)
+        .limit(Number(limit))
+        .exec()
+
+    return {
+        data,
+        meta: {
+            total,
+            page: Number(page),
+            limit: Number(limit),
+            totalPages: Math.ceil(total / limit)
+        }
+    }
+}
+
 export const StudentService = {
     enrollStudent,
-    webhook
+    webhook,
+    getAllStudents
 }

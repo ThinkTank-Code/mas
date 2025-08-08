@@ -5,6 +5,11 @@ import { Role } from '../../types/role';
 import { StudentController } from './student.controller';
 const router = express.Router();
 
+router.get(
+    '/',
+    StudentController.getAllStudents
+)
+
 router.post(
     '/',
     StudentController.enrollStudent

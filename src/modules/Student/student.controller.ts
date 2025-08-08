@@ -26,9 +26,23 @@ const webhook = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const getAllStudents = catchAsync(async (req: Request, res: Response) => {
+    console.log("query: ", req.query)
+    const result = await StudentService.getAllStudents(req.query);
+
+    sendResponse(res, {
+        statusCode: 201,
+        success: true,
+        message: 'Student Retrive successfully !',
+        meta: result.meta,
+        data: result.data,
+    });
+});
+
 
 
 export const StudentController = {
     enrollStudent,
-    webhook
+    webhook,
+    getAllStudents
 }

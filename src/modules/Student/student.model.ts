@@ -1,14 +1,7 @@
 import { Schema, Types, model } from 'mongoose';
+import { IStudent } from './student.interface';
 
-export interface IStudent {
-    name: string;
-    email: string;
-    studentId: string;
-    address: string;
-    phone: string;
-    paymentStatus: 'pending' | 'success' | 'failed';
-    batch: Types.ObjectId;
-}
+
 
 const studentSchema = new Schema<IStudent>(
     {
