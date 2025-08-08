@@ -230,51 +230,6 @@ const webhook = async (payload: any) => {
         default:
             paymentStatus = Status.Failed;
     }
-    //     {
-    //   result: {
-    //     status: 'VALID',
-    //     tran_date: '2025-08-05 23:55:12',
-    //     tran_id: '50b0e001-8d35-44b4-8028-b18c3dca3268',
-    //     val_id: '250805235525g2u6Osnv9RhtmcS',
-    //     amount: '4000.00',
-    //     store_amount: '3900',
-    //     currency: 'BDT',
-    //     bank_tran_id: '2508052355250HXkauKNjexeiXv',
-    //     card_type: 'BANKASIA-Bank Asia Internet Banking',
-    //     card_no: '',
-    //     card_issuer: 'Bank Asia Limited',
-    //     card_brand: 'IB',
-    //     card_category: 'IB',
-    //     card_sub_brand: '',
-    //     card_issuer_country: 'Bangladesh',
-    //     card_issuer_country_code: 'BD',
-    //     currency_type: 'BDT',
-    //     currency_amount: '4000.00',
-    //     currency_rate: '1.0000',
-    //     base_fair: '0.00',
-    //     value_a: '',
-    //     value_b: '',
-    //     value_c: '',
-    //     value_d: '',
-    //     emi_instalment: '0',
-    //     emi_amount: '0.00',
-    //     emi_description: '',
-    //     emi_issuer: 'Bank Asia Limited',
-    //     account_details: '',
-    //     risk_title: 'Safe',
-    //     risk_level: '0',
-    //     discount_percentage: '0',
-    //     discount_amount: '0.00',
-    //     discount_remarks: '',
-    //     APIConnect: 'DONE',
-    //     validated_on: '2025-08-05 23:55:26',
-    //     gw_version: '',
-    //     offer_avail: 1,
-    //     card_ref_id: 'dc1da4f52669828139e81ef5eb0f48a5a99ea054a131e00a562887d455417dd923',
-    //     isTokeizeSuccess: 0,
-    //     campaign_code: ''
-    //   }
-    // }
 
     // Update payment status in DB
     const updatedPayment = await PaymentModel.findOneAndUpdate(
