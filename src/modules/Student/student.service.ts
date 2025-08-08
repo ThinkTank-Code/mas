@@ -10,6 +10,8 @@ import env from "../../config/env";
 import ApiError from "../../errors/ApiError";
 import { StatusCodes } from "http-status-codes";
 import { GetStudentsParams, IStudent } from "./student.interface";
+import { EnrolledStudentModel } from "../StudentEnrollment/studentEnrollment";
+import { Status } from "../../types/common";
 
 const enrollStudent = async (payload: any) => {
     const session = await mongoose.startSession();
@@ -19,38 +21,67 @@ const enrollStudent = async (payload: any) => {
 
         // 1. Find current batch (with session)
         const batch = await BatchModel.findOne({ isCurrent: true }).session(session);
+
         if (!batch) {
             throw new ApiError(StatusCodes.NOT_FOUND, "No current batch found!")
         }
 
-        // 2. Generate student id
-        const studentId = await generateStudentId(batch);
+        // 2. Find Student with email
+        const isStudentExists = await StudentModel.findOne({ email: payload.email })
 
-        console.log({ studentId })
+        let student: any = isStudentExists;
+        let isAlreadyEnrolled: any;
+        // 3. The Student enrolled in current batch or not
+        if (!isStudentExists) {
+            const createStudent = await StudentModel.create(
+                [
+                    {
+                        name: payload.name,
+                        email: payload.email,
+                        phone: payload.phone,
+                        address: payload.address
+                    },
+                ],
+                { session }
+            );
 
-        // 3. Create student (with session)
-        const student = await StudentModel.create(
-            [
+            student = createStudent[0];
+        }
+        else {
+            isAlreadyEnrolled = await EnrolledStudentModel.findOne({
+                student: isStudentExists._id,
+                batch: batch._id
+            })
+                .populate("payment")
+                .session(session);
+
+            if (
+                isAlreadyEnrolled &&
+                isAlreadyEnrolled.payment?.status === Status.Success &&
+                isAlreadyEnrolled.status === Status.Success
+            ) {
+                throw new ApiError(StatusCodes.BAD_REQUEST, "You are already enrolled in the current batch!");
+            }
+
+            await StudentModel.findByIdAndUpdate(
+                isStudentExists._id,
                 {
                     name: payload.name,
-                    email: payload.email,
                     phone: payload.phone,
                     address: payload.address,
-                    batch: batch._id,
-                    studentId,
-                    paymentStatus: "pending",
                 },
-            ],
-            { session }
-        );
+                { session }
+            )
+        }
 
         // 4. Create payment (with session)
         const transactionId = uuidv4();
+        const studentId = await generateStudentId(batch);
 
         const payment = await PaymentModel.create(
             [
                 {
-                    studentId: student[0]._id,
+                    studentId: student._id,
                     amount: batch.courseFee,
                     status: "pending",
                     transactionId,
@@ -58,6 +89,26 @@ const enrollStudent = async (payload: any) => {
             ],
             { session }
         );
+
+        if (isAlreadyEnrolled) {
+            await EnrolledStudentModel.findByIdAndUpdate(
+                isAlreadyEnrolled._id,
+                { payment: payment[0]._id },
+                { session }
+            );
+        } else {
+            await EnrolledStudentModel.create(
+                [
+                    {
+                        student: student._id,
+                        studentId: studentId,
+                        batch: batch._id,
+                        payment: payment[0]._id,
+                    },
+                ],
+                { session }
+            );
+        }
 
         // 5. Init payment at SSLCommerz (outside transaction)
         const sslCommerzPayload = {
@@ -69,7 +120,7 @@ const enrollStudent = async (payload: any) => {
             success_url: `${env.SERVER_URL}/api/v1/payment/status?status=success&t=${transactionId}`,
             fail_url: `${process.env.SERVER_URL}/api/v1/payment/status?status=fail`,
             cancel_url: `${process.env.SERVER_URL}/api/v1/payment/status?status=cancel`,
-            ipn_url: `https://1e38040386f1.ngrok-free.app/api/v1/student/ipn`,
+            ipn_url: `https://27a56a1c7ffd.ngrok-free.app/api/v1/student/ipn`,
             product_name: `Graphics Design Course - ${batch.title}`,
             cus_name: payload.name,
             cus_email: payload.email,
@@ -92,11 +143,6 @@ const enrollStudent = async (payload: any) => {
             ship_postcode: 1000,
             ship_country: 'Bangladesh',
         };
-
-        // const sslResponse = await axios.post(
-        //     "https://sandbox.sslcommerz.com/gwprocess/v3/api.php",
-        //     sslCommerzPayload
-        // );
 
         const sslResponse = await axios({
             method: 'post',
@@ -121,8 +167,8 @@ const enrollStudent = async (payload: any) => {
     } catch (error) {
         await session.abortTransaction();
         session.endSession();
-        console.error("Enrollment failed: ", error);
-        throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, "Internal server error")
+        // @ts-ignore
+        throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, error?.message || "Internal server error")
     }
 };
 
@@ -133,7 +179,6 @@ const validate = async (data: any) => {
             method: 'GET',
             url: `https://sandbox.sslcommerz.com/validator/api/validationserverAPI.php?val_id=${data.val_id}&store_id=${env.SSL_STORE_ID}&store_passwd=${env.SSL_STORE_PASSWORD}&format=json`
         })
-        console.log(response);
         return response.data;
     }
     catch (err) {
@@ -143,15 +188,48 @@ const validate = async (data: any) => {
 
 
 const webhook = async (payload: any) => {
-    console.log("Payload:", payload);
-    if (!payload || !payload?.status || payload?.status !== 'VALID') {
+    if (!payload || !payload?.status) {
         return {
             massage: 'Invalid Payment!'
         }
     }
-    const result = await validate(payload);
 
-    console.log({ result })
+    const result = await validate(payload);
+    const { tran_id } = result;
+
+    // Find existing payment record
+    const payment = await PaymentModel.findOne({ transactionId: tran_id });
+    if (!payment) {
+        return { message: 'Payment record not found!' };
+    }
+
+    const tranStatus = result.status.toUpperCase();
+
+    let paymentStatus: string;
+
+    switch (tranStatus) {
+        case 'VALIDATED':
+        case 'VALID': {
+            const risk_level = result.risk_level ?? '0'; // Default low if missing
+
+            if (risk_level === '1') {
+                paymentStatus = Status.Review; // hold service for verification
+            } else {
+                paymentStatus = Status.Success;
+            }
+            break;
+        }
+
+        case 'INVALID_TRANSACTION':
+            paymentStatus = Status.Failed;
+            break;
+
+        case 'CANCELLED':
+            paymentStatus = Status.Cancel;
+            break;
+        default:
+            paymentStatus = Status.Failed;
+    }
     //     {
     //   result: {
     //     status: 'VALID',
@@ -198,13 +276,25 @@ const webhook = async (payload: any) => {
     //   }
     // }
 
-    if (result?.status !== 'VALID') {
-        return {
-            massage: 'Payment failed!'
-        }
+    // Update payment status in DB
+    const updatedPayment = await PaymentModel.findOneAndUpdate(
+        { transactionId: tran_id },
+        { status: paymentStatus },
+        { new: true }
+    );
+
+    if (!updatedPayment) {
+        return { message: 'Payment record not found to update!' };
     }
 
-    const { tran_id } = result;
+    const updateEnrollment = await EnrolledStudentModel.findOneAndUpdate(
+        { student: updatedPayment.studentId, payment: updatedPayment._id },
+        { status: paymentStatus },
+        { new: true }
+    )
+
+    console.log({ updateEnrollment })
+
     return { tran_id, payload }
 }
 

@@ -1,4 +1,5 @@
 import { Schema, model, Types } from "mongoose";
+import { Status } from "../../types/common";
 
 export interface IPayment {
     transactionId: string;
@@ -29,8 +30,8 @@ const paymentSchema = new Schema<IPayment>(
         },
         status: {
             type: String,
-            enum: ["pending", "success", "failed"],
-            default: "pending",
+            enum: Object.values(Status),
+            default: Status.Pending,
         },
         method: {
             type: String,

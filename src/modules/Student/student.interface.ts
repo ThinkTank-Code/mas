@@ -3,11 +3,9 @@ import { Types } from "mongoose";
 export interface IStudent {
     name: string;
     email: string;
-    studentId: string;
     address: string;
     phone: string;
-    paymentStatus: 'pending' | 'success' | 'failed';
-    batch: Types.ObjectId;
+    status: 'active' | 'blocked' | 'deleted'
 }
 
 export interface GetStudentsParams {

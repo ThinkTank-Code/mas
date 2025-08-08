@@ -14,3 +14,12 @@ export type IGenericErrorResponse = {
     message: string;
     errorMessages: IGenericErrorMessage[];
 };
+
+export enum Status {
+    Pending = "pending",
+    Success = "success",
+    Failed = "failed",
+    Review = "review",
+    Risk = "risk",
+    Cancel = "cancel"
+}

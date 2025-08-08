@@ -1,24 +1,16 @@
-import { Schema, Types, model } from 'mongoose';
+import { Schema, model } from 'mongoose';
 import { IStudent } from './student.interface';
-
-
 
 const studentSchema = new Schema<IStudent>(
     {
         name: { type: String, required: true },
-        email: { type: String, required: true },
-        studentId: { type: String, required: true, unique: true },
-        batch: {
-            type: Schema.Types.ObjectId,
-            ref: 'Batch',
-            required: true,
-        },
+        email: { type: String, required: true, unique: true },
         address: { type: String, required: true },
         phone: { type: String, required: true },
-        paymentStatus: {
+        status: {
             type: String,
-            enum: ['pending', 'success', 'failed'],
-            default: 'pending',
+            enum: ['active', 'blocked', 'deleted'],
+            default: 'active',
         },
     },
     {
