@@ -10,7 +10,10 @@ import globalErrorHandler from './middlewares/globalErrorHandler';
 const app = express();
 
 // Middleware
-app.use(cors());                // Enables Cross-Origin Resource Sharing
+app.use(cors({
+    origin: "http://localhost:3000",
+    credentials: true
+}));                // Enables Cross-Origin Resource Sharing
 app.use(helmet());              // Adds security headers to protect against vulnerabilities
 app.use(morgan('dev'));         // Logs HTTP requests for better monitoring
 app.use(compression());         // Compresses response bodies for faster delivery
