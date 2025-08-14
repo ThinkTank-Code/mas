@@ -7,6 +7,7 @@ const EnvSchema = z.object({
     // General
     PORT: z.string().default("3000"),
     NODE_ENV: z.enum(["development", "production", "stage"]),
+    LOG_LEVEL: z.string().default("info"),
     // Database
     MONGO_URI: z.string(),
 
