@@ -46,7 +46,6 @@ const getPaymentHistory = async (query: PaymentHistoryQuery) => {
             $match: {
                 $or: [
                     { transactionId: { $regex: search, $options: "i" } },
-                    // If you want to search by student name, need to lookup
                 ],
             },
         });

@@ -21,6 +21,7 @@ const getPaymentHistory = catchAsync(async (req: Request, res: Response) => {
 const updatePaymentWithEnrollStatus = catchAsync(async (req: Request, res: Response) => {
     const tran_id = req.params.tran_id;
     const status = req.body.status;
+    console.log({ tran_id, status })
     if (!tran_id || !status) throw new ApiError(StatusCodes.BAD_REQUEST, "Bad Request!")
 
     const result = await PaymentService.updatePaymentWithEnrollStatus(tran_id, status);
