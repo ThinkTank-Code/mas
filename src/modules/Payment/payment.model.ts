@@ -35,7 +35,7 @@ const paymentSchema = new Schema<IPayment>(
         },
         method: {
             type: String,
-            enum: ["SSLCommerz"],
+            enum: ["SSLCommerz", "paytm"],
             default: "SSLCommerz",
         },
         gatewayResponse: {
