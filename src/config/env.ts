@@ -20,7 +20,7 @@ const EnvSchema = z.object({
     SSL_STORE_PASSWORD: z.string(),
     SSL_IS_LIVE: z.string(),
     SERVER_URL: z.string(),
-
+    FRONTEND_URL: z.string(),
 });
 
 // Validate and parse environment variables

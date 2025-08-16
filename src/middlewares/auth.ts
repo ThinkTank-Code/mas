@@ -1,10 +1,7 @@
 import { NextFunction, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import ApiError from '../errors/ApiError';
-import { IAuthUser } from '../types/auth';
 import { verifyToken } from '../utils/jwt';
-import { JwtPayload } from 'jsonwebtoken';
-import { Role } from '../types/role';
 
 const auth =
     (...requiredRoles: string[]) =>
@@ -16,7 +13,9 @@ const auth =
                     return reject(new ApiError(StatusCodes.UNAUTHORIZED, 'Unauthorized'));
                 }
 
-                const verifiedUser = verifyToken(token);
+                const extractToken = token.split(" ")[1];
+
+                const verifiedUser = verifyToken(extractToken);
 
                 if (!verifiedUser) {
                     return reject(new ApiError(StatusCodes.UNAUTHORIZED, 'Unauthorized'));

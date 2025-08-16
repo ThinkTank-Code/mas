@@ -7,6 +7,7 @@ const router = express.Router();
 
 router.get(
     '/',
+    auth(Role.SUPERADMIN),
     StudentController.getAllStudents
 )
 

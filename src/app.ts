@@ -6,12 +6,13 @@ import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import router from './routes';
 import globalErrorHandler from './middlewares/globalErrorHandler';
+import env from './config/env';
 
 const app = express();
 
 // Middleware
 app.use(cors({
-    origin: "http://localhost:3000",
+    origin: env.FRONTEND_URL,
     credentials: true
 }));                // Enables Cross-Origin Resource Sharing
 app.use(helmet());              // Adds security headers to protect against vulnerabilities
