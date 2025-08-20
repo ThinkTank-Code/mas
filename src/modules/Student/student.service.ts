@@ -155,6 +155,7 @@ const enrollStudent = async (payload: any) => {
             });
 
             if (!sslResponse.data?.GatewayPageURL) {
+                console.log(sslResponse, "-----------")
                 throw new ApiError(StatusCodes.BAD_GATEWAY, "Failed to init payment!")
             }
 
@@ -269,18 +270,39 @@ const webhook = async (payload: any) => {
 
     // ---- Fetch student email ----
     let userEmail: string | undefined;
+    let studentData: {
+        name: string,
+        email: string,
+        studentId: string,
+        status: Status,
+        amount: number
+    } = {
+        name: "",
+        email: "",
+        studentId: "",
+        status: Status.Pending,
+        amount: 0
+    }
     if (updateEnrollment?.student) {
         const student = await StudentModel.findById(updateEnrollment.student);
+        if (student) {
+            const EnrolledData = await EnrolledStudentModel.findOne({ student: student._id }).populate("payment")
+            studentData.name = student.name;
+            studentData.email = student.email;
+            studentData.studentId = EnrolledData?.studentId as string;
+            studentData.status = paymentStatus as Status;
+            studentData.amount = 4000;
+        }
         userEmail = student?.email;
     }
     // ---- Send Email ----
     if (userEmail) {
         if (paymentStatus === Status.Success) {
-            await sendPaymentEmail(userEmail, "success", tran_id);
+            await sendPaymentEmail(userEmail, "success", studentData);
         } else if (paymentStatus === Status.Review) {
-            await sendPaymentEmail(userEmail, "review", tran_id);
+            await sendPaymentEmail(userEmail, "review", studentData);
         } else {
-            await sendPaymentEmail(userEmail, "failed", tran_id);
+            await sendPaymentEmail(userEmail, "failed", studentData);
         }
     }
 
