@@ -12,6 +12,7 @@ import { StatusCodes } from "http-status-codes";
 import { GetStudentsParams, IStudent } from "./student.interface";
 import { EnrolledStudentModel } from "../StudentEnrollment/studentEnrollment";
 import { Status } from "../../types/common";
+import { sendPaymentEmail } from "../../utils/sendEmail";
 
 const enrollStudent = async (payload: any) => {
     const session = await mongoose.startSession();
@@ -85,6 +86,7 @@ const enrollStudent = async (payload: any) => {
                     amount: batch.courseFee,
                     status: "pending",
                     transactionId,
+                    method: payload.method
                 },
             ],
             { session }
@@ -110,60 +112,74 @@ const enrollStudent = async (payload: any) => {
             );
         }
 
-        // 5. Init payment at SSLCommerz (outside transaction)
-        const sslCommerzPayload = {
-            store_id: env.SSL_STORE_ID,
-            store_passwd: env.SSL_STORE_PASSWORD,
-            total_amount: batch.courseFee,
-            currency: "BDT",
-            tran_id: transactionId,
-            success_url: `${env.SERVER_URL}/api/v1/payment/status?status=success&t=${transactionId}`,
-            fail_url: `${process.env.SERVER_URL}/api/v1/payment/status?status=fail`,
-            cancel_url: `${process.env.SERVER_URL}/api/v1/payment/status?status=cancel`,
-            ipn_url: `https://27a56a1c7ffd.ngrok-free.app/api/v1/student/ipn`,
-            product_name: `Graphics Design Course - ${batch.title}`,
-            cus_name: payload.name,
-            cus_email: payload.email,
-            cus_add1: payload.address,
-            cus_phone: payload.phone,
-            shipping_method: 'N/A',
-            product_category: 'Online Course',
-            product_profile: 'general',
-            cus_add2: 'N/A',
-            cus_city: 'N/A',
-            cus_state: 'N/A',
-            cus_postcode: 'N/A',
-            cus_country: 'Bangladesh',
-            cus_fax: 'N/A',
-            ship_name: 'N/A',
-            ship_add1: 'N/A',
-            ship_add2: 'N/A',
-            ship_city: 'N/A',
-            ship_state: 'N/A',
-            ship_postcode: 1000,
-            ship_country: 'Bangladesh',
-        };
+        if (payload.method === "SSLCommerz") {
+            // 5. Init payment at SSLCommerz (outside transaction)
+            const sslCommerzPayload = {
+                store_id: env.SSL_STORE_ID,
+                store_passwd: env.SSL_STORE_PASSWORD,
+                total_amount: batch.courseFee,
+                currency: "BDT",
+                tran_id: transactionId,
+                success_url: `${env.SERVER_URL}/api/v1/payment/status?status=success&t=${transactionId}`,
+                fail_url: `${process.env.SERVER_URL}/api/v1/payment/status?status=fail`,
+                cancel_url: `${process.env.SERVER_URL}/api/v1/payment/status?status=cancel`,
+                ipn_url: `https://beb4d5297f73.ngrok-free.app/api/v1/student/ipn`,
+                product_name: `Graphics Design Course - ${batch.title}`,
+                cus_name: payload.name,
+                cus_email: payload.email,
+                cus_add1: payload.address,
+                cus_phone: payload.phone,
+                shipping_method: 'N/A',
+                product_category: 'Online Course',
+                product_profile: 'general',
+                cus_add2: 'N/A',
+                cus_city: 'N/A',
+                cus_state: 'N/A',
+                cus_postcode: 'N/A',
+                cus_country: 'Bangladesh',
+                cus_fax: 'N/A',
+                ship_name: 'N/A',
+                ship_add1: 'N/A',
+                ship_add2: 'N/A',
+                ship_city: 'N/A',
+                ship_state: 'N/A',
+                ship_postcode: 1000,
+                ship_country: 'Bangladesh',
+            };
 
-        const sslResponse = await axios({
-            method: 'post',
-            url: "https://sandbox.sslcommerz.com/gwprocess/v3/api.php",
-            data: sslCommerzPayload,
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-        });
+            const sslResponse = await axios({
+                method: 'post',
+                url: "https://sandbox.sslcommerz.com/gwprocess/v3/api.php",
+                data: sslCommerzPayload,
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+            });
 
-        if (!sslResponse.data?.GatewayPageURL) {
-            throw new ApiError(StatusCodes.BAD_GATEWAY, "Failed to init payment!")
+            if (!sslResponse.data?.GatewayPageURL) {
+                throw new ApiError(StatusCodes.BAD_GATEWAY, "Failed to init payment!")
+            }
+
+            // Commit the transaction if all succeeded
+            await session.commitTransaction();
+            session.endSession();
+
+            return {
+                paymentUrl: sslResponse.data.GatewayPageURL,
+                studentId,
+                transactionId,
+            };
         }
-
-        // Commit the transaction if all succeeded
-        await session.commitTransaction();
-        session.endSession();
-
-        return {
-            paymentUrl: sslResponse.data.GatewayPageURL,
-            studentId,
-            transactionId,
-        };
+        else {
+            await PaymentModel.findByIdAndUpdate(
+                payment[0]._id,
+                { ...payload.paymentData },
+                { new: true, session }
+            );
+            await session.commitTransaction();
+            session.endSession();
+            return {
+                message: "Payment info Submitted successfully! You will get confirmation message soon."
+            }
+        }
     } catch (error) {
         await session.abortTransaction();
         session.endSession();
@@ -249,6 +265,23 @@ const webhook = async (payload: any) => {
     )
 
     console.log({ updateEnrollment })
+
+    // ---- Fetch student email ----
+    let userEmail: string | undefined;
+    if (updateEnrollment?.student) {
+        const student = await StudentModel.findById(updateEnrollment.student);
+        userEmail = student?.email;
+    }
+    // ---- Send Email ----
+    if (userEmail) {
+        if (paymentStatus === Status.Success) {
+            await sendPaymentEmail(userEmail, "success", tran_id);
+        } else if (paymentStatus === Status.Review) {
+            await sendPaymentEmail(userEmail, "review", tran_id);
+        } else {
+            await sendPaymentEmail(userEmail, "failed", tran_id);
+        }
+    }
 
     return { tran_id, payload }
 }

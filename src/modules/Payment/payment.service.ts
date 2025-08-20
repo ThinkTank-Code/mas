@@ -2,6 +2,8 @@ import mongoose, { PipelineStage } from "mongoose";
 import { PaymentModel } from "./payment.model";
 import { Status } from "../../types/common";
 import { EnrolledStudentModel } from "../StudentEnrollment/studentEnrollment";
+import ApiError from "../../errors/ApiError";
+import { StatusCodes } from "http-status-codes";
 
 interface PaymentHistoryQuery {
     page?: number;
@@ -152,7 +154,42 @@ const updatePaymentWithEnrollStatus = async (
     }
 };
 
+const checkPaymentStatus = async (tran_id: string) => {
+    // Find payment record
+    const payment = await PaymentModel.findOne({ transactionId: tran_id });
+    if (!payment) {
+        throw new ApiError(StatusCodes.NOT_FOUND, "Payment data not found!")
+    }
+
+    // Optionally, fetch enrollment info
+    const enrollment = await EnrolledStudentModel.findOne({
+        student: payment.studentId,
+        payment: payment._id
+    });
+
+    // Determine frontend redirect URL based on status
+    let redirectUrl = "/";
+    switch (payment.status) {
+        case Status.Success:
+            redirectUrl = "/payment?status=success";
+            break;
+        case Status.Pending:
+            redirectUrl = "/payment?status=failed";
+            break;
+        case Status.Failed:
+            redirectUrl = "/payment?status=failed";
+            break;
+        default:
+            redirectUrl = "/payment?status=failed";
+    }
+
+    return {
+        redirectUrl
+    };
+};
+
 export const PaymentService = {
     getPaymentHistory,
-    updatePaymentWithEnrollStatus
+    updatePaymentWithEnrollStatus,
+    checkPaymentStatus
 }

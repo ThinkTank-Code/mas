@@ -17,4 +17,7 @@ router.patch(
     PaymentController.updatePaymentWithEnrollStatus
 );
 
+
+router.post("/status", PaymentController.checkPaymentStatus);
+
 export const PaymentRoutes = router;
