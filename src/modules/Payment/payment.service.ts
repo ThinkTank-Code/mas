@@ -4,6 +4,8 @@ import { Status } from "../../types/common";
 import { EnrolledStudentModel } from "../StudentEnrollment/studentEnrollment";
 import ApiError from "../../errors/ApiError";
 import { StatusCodes } from "http-status-codes";
+import { sendPaymentEmail } from "../../utils/sendEmail";
+import { StudentModel } from "../Student/student.model";
 
 interface PaymentHistoryQuery {
     page?: number;
@@ -72,6 +74,7 @@ const getPaymentHistory = async (query: PaymentHistoryQuery) => {
                 status: 1,
                 method: 1,
                 createdAt: 1,
+                gatewayResponse: { $ifNull: ["$gatewayResponse", {}] },
                 "student._id": 1,
                 "student.name": 1,
                 "student.email": 1,
@@ -136,6 +139,43 @@ const updatePaymentWithEnrollStatus = async (
 
         if (!updatedEnrollment) {
             throw new Error("Enrolled student record not found");
+        }
+
+        let userEmail: string | undefined;
+        let studentData: {
+            name: string,
+            email: string,
+            studentId: string,
+            status: Status,
+            amount: number
+        } = {
+            name: "",
+            email: "",
+            studentId: "",
+            status: Status.Pending,
+            amount: 0
+        }
+        if (updatedEnrollment?.student) {
+            const student = await StudentModel.findById(updatedEnrollment.student);
+            if (student) {
+                const EnrolledData = await EnrolledStudentModel.findOne({ student: student._id }).populate("payment")
+                studentData.name = student.name;
+                studentData.email = student.email;
+                studentData.studentId = EnrolledData?.studentId as string;
+                studentData.status = paymentStatus;
+                studentData.amount = 4000;
+            }
+            userEmail = student?.email;
+        }
+
+        if (userEmail) {
+            if (paymentStatus === Status.Success) {
+                await sendPaymentEmail(userEmail, "success", studentData);
+            } else if (paymentStatus === Status.Review) {
+                await sendPaymentEmail(userEmail, "review", studentData);
+            } else {
+                await sendPaymentEmail(userEmail, "failed", studentData);
+            }
         }
 
         // Commit transaction

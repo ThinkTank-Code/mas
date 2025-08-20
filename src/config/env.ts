@@ -22,7 +22,9 @@ const EnvSchema = z.object({
     SERVER_URL: z.string(),
     FRONTEND_URL: z.string(),
     EMAIL_USER: z.string(),
-    EMAIL_PASS: z.string()
+    EMAIL_PASS: z.string(),
+    SSL_PAYMENT_API: z.string(),
+    SSL_VALIDATION_API: z.string()
 });
 
 // Validate and parse environment variables

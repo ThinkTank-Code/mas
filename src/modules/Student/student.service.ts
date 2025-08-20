@@ -121,9 +121,9 @@ const enrollStudent = async (payload: any) => {
                 currency: "BDT",
                 tran_id: transactionId,
                 success_url: `${env.SERVER_URL}/api/v1/payment/status?status=success&t=${transactionId}`,
-                fail_url: `${process.env.SERVER_URL}/api/v1/payment/status?status=fail`,
-                cancel_url: `${process.env.SERVER_URL}/api/v1/payment/status?status=cancel`,
-                ipn_url: `https://beb4d5297f73.ngrok-free.app/api/v1/student/ipn`,
+                fail_url: `${env.SERVER_URL}/api/v1/payment/status?status=fail`,
+                cancel_url: `${env.SERVER_URL}/api/v1/payment/status?status=cancel`,
+                ipn_url: `${env.SERVER_URL}/api/v1/student/ipn`,
                 product_name: `Graphics Design Course - ${batch.title}`,
                 cus_name: payload.name,
                 cus_email: payload.email,
@@ -149,7 +149,7 @@ const enrollStudent = async (payload: any) => {
 
             const sslResponse = await axios({
                 method: 'post',
-                url: "https://sandbox.sslcommerz.com/gwprocess/v3/api.php",
+                url: env.SSL_PAYMENT_API,
                 data: sslCommerzPayload,
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
             });
@@ -169,9 +169,10 @@ const enrollStudent = async (payload: any) => {
             };
         }
         else {
+            console.log("payment data: ", payload.paymentData)
             await PaymentModel.findByIdAndUpdate(
                 payment[0]._id,
-                { ...payload.paymentData },
+                { gatewayResponse: payload.paymentData },
                 { new: true, session }
             );
             await session.commitTransaction();
@@ -193,7 +194,7 @@ const validate = async (data: any) => {
     try {
         const response = await axios({
             method: 'GET',
-            url: `https://sandbox.sslcommerz.com/validator/api/validationserverAPI.php?val_id=${data.val_id}&store_id=${env.SSL_STORE_ID}&store_passwd=${env.SSL_STORE_PASSWORD}&format=json`
+            url: `${env.SSL_VALIDATION_API}?val_id=${data.val_id}&store_id=${env.SSL_STORE_ID}&store_passwd=${env.SSL_STORE_PASSWORD}&format=json`
         })
         return response.data;
     }
@@ -250,7 +251,7 @@ const webhook = async (payload: any) => {
     // Update payment status in DB
     const updatedPayment = await PaymentModel.findOneAndUpdate(
         { transactionId: tran_id },
-        { status: paymentStatus },
+        { status: paymentStatus, gatewayResponse: result },
         { new: true }
     );
 
