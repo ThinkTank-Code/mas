@@ -7,6 +7,7 @@ import rateLimit from 'express-rate-limit';
 import router from './routes';
 import globalErrorHandler from './middlewares/globalErrorHandler';
 import env from './config/env';
+import { seedSuperAdmin } from './scripts/seedSuperAdmin';
 
 const app = express();
 
@@ -33,6 +34,8 @@ app.use('/api/v1', router);
 app.get('/', (req, res) => {
     res.send('API is running');
 });
+
+seedSuperAdmin()
 
 app.use(globalErrorHandler)
 
