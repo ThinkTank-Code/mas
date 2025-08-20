@@ -35,7 +35,7 @@ app.get('/', (req, res) => {
     res.send('API is running');
 });
 
-seedSuperAdmin()
+// seedSuperAdmin()
 
 app.use(globalErrorHandler)
 
