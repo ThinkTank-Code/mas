@@ -22,7 +22,7 @@ app.use(express.urlencoded({ extended: true })); // FOR FORM DATA
 app.use(express.json()); // FOR JSON (not needed by SSLCommerz)
 
 // Rate Limiter
-app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }));
+app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 80 }));
 
 // Routes
 app.use('/api/v1', router);
