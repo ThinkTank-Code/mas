@@ -10,7 +10,7 @@ import env from './config/env';
 
 const app = express();
 
-app.set("trust proxy", true);
+app.set("trust proxy", 1);
 
 // Middleware
 app.use(cors({
