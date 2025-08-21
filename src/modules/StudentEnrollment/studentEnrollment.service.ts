@@ -84,6 +84,8 @@ const getEnrolledStudents = async (query: GetEnrolledStudentQuery) => {
             "student._id": 1,
             "student.name": 1,
             "student.email": 1,
+            "student.phone": 1,
+            "student.address": 1,
             "batch._id": 1,
             "batch.title": 1,
         },
