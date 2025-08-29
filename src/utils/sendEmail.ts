@@ -114,7 +114,7 @@ export const sendPaymentEmail = async (
                         ${tranId ? `<p><strong>Transaction ID:</strong> ${tranId}</p>` : ''}
                         ${includeGroups ? `
                         <p>Please join our community groups for course updates, resources, and further communication:</p>
-                        <p><a href="https://www.facebook.com/groups/1260840889102199">Join our Facebook Group</a></p>
+                        <p><a href="https://www.facebook.com/groups/1323242489449117">Join our Facebook Group</a></p>
                         <p><a href="https://chat.whatsapp.com/CygL5sIowiBFPlutW3iNgl">Join our WhatsApp Group</a></p>
                         ` : ''}
                     </div>
