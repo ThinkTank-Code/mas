@@ -18,6 +18,98 @@ interface PaymentHistoryQuery {
     sortOrder?: "asc" | "desc";
 }
 
+// const getPaymentHistory = async (query: PaymentHistoryQuery) => {
+//     const {
+//         page = 1,
+//         limit = 10,
+//         search,
+//         status,
+//         method,
+//         studentId,
+//         sortBy = "createdAt",
+//         sortOrder = "desc",
+//     } = query;
+
+//     const filters: Record<string, any> = {};
+
+//     if (status) {
+//         filters.status = status;
+//     }
+
+//     if (method) {
+//         filters.method = method;
+//     }
+
+//     if (studentId) {
+//         filters.studentId = studentId;
+//     }
+
+//     const searchStage: PipelineStage[] = [];
+//     if (search) {
+//         searchStage.push({
+//             $match: {
+//                 $or: [
+//                     { transactionId: { $regex: search, $options: "i" } },
+//                 ],
+//             },
+//         });
+//     }
+
+//     const pipeline: PipelineStage[] = [
+//         { $match: filters },
+//         ...searchStage,
+//         {
+//             $lookup: {
+//                 from: "students", // collection name in MongoDB
+//                 localField: "studentId",
+//                 foreignField: "_id",
+//                 as: "student",
+//             },
+//         },
+//         { $unwind: "$student" },
+//         {
+//             $project: {
+//                 transactionId: 1,
+//                 amount: 1,
+//                 status: 1,
+//                 method: 1,
+//                 createdAt: 1,
+//                 gatewayResponse: { $ifNull: ["$gatewayResponse", {}] },
+//                 "student._id": 1,
+//                 "student.name": 1,
+//                 "student.email": 1,
+//                 "student.phone": 1
+//             },
+//         },
+//         {
+//             $sort: {
+//                 [sortBy]: sortOrder === "asc" ? 1 : -1,
+//             },
+//         },
+//         {
+//             $skip: (page - 1) * limit,
+//         },
+//         {
+//             $limit: limit,
+//         },
+//     ];
+
+//     const data = await PaymentModel.aggregate(pipeline);
+
+//     const totalDocuments = await PaymentModel.countDocuments(filters);
+
+//     return {
+//         meta: {
+//             total: totalDocuments,
+//             page,
+//             limit,
+//             totalPages: Math.ceil(totalDocuments / limit),
+//         },
+//         data,
+//     };
+// };
+
+
 const getPaymentHistory = async (query: PaymentHistoryQuery) => {
     const {
         page = 1,
@@ -44,29 +136,33 @@ const getPaymentHistory = async (query: PaymentHistoryQuery) => {
         filters.studentId = studentId;
     }
 
-    const searchStage: PipelineStage[] = [];
-    if (search) {
-        searchStage.push({
-            $match: {
-                $or: [
-                    { transactionId: { $regex: search, $options: "i" } },
-                ],
-            },
-        });
-    }
-
     const pipeline: PipelineStage[] = [
         { $match: filters },
-        ...searchStage,
         {
             $lookup: {
-                from: "students", // collection name in MongoDB
+                from: "students",
                 localField: "studentId",
                 foreignField: "_id",
                 as: "student",
             },
         },
         { $unwind: "$student" },
+    ];
+
+    // Add search stage if search query exists
+    if (search) {
+        pipeline.push({
+            $match: {
+                $or: [
+                    { transactionId: { $regex: search, $options: "i" } },
+                    { "student.name": { $regex: search, $options: "i" } },
+                    { "student.email": { $regex: search, $options: "i" } },
+                ],
+            },
+        });
+    }
+
+    pipeline.push(
         {
             $project: {
                 transactionId: 1,
@@ -78,7 +174,7 @@ const getPaymentHistory = async (query: PaymentHistoryQuery) => {
                 "student._id": 1,
                 "student.name": 1,
                 "student.email": 1,
-                "student.phone": 1
+                "student.phone": 1,
             },
         },
         {
@@ -91,8 +187,8 @@ const getPaymentHistory = async (query: PaymentHistoryQuery) => {
         },
         {
             $limit: limit,
-        },
-    ];
+        }
+    );
 
     const data = await PaymentModel.aggregate(pipeline);
 
