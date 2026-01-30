@@ -1,0 +1,53 @@
+import { Request, Response } from "express";
+import catchAsync from "../../utils/catchAsync";
+import sendResponse from "../../utils/sendResponse";
+import { DashboardService } from "./dashboard.service";
+
+const getDashboardMetaData = catchAsync(async (req: Request, res: Response) => {
+    const result = await DashboardService.getDashboardMetaData();
+    sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: 'Metadata Retrive successfully !',
+        data: result,
+    });
+});
+
+const getAdminDashboard = catchAsync(async (req: Request, res: Response) => {
+    const result = await DashboardService.getAdminDashboard();
+    sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: 'Admin dashboard data retrieved successfully',
+        data: result,
+    });
+});
+
+const getUserStats = catchAsync(async (req: Request, res: Response) => {
+    const result = await DashboardService.getUserStats();
+    sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: 'User stats retrieved successfully',
+        data: result,
+    });
+});
+
+const getStudentDashboard = catchAsync(async (req: Request, res: Response) => {
+    const { userId } = req.user as any;
+    const result = await DashboardService.getStudentDashboard(userId);
+    sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: 'Student dashboard data retrieved successfully',
+        data: result,
+    });
+});
+
+
+export const DashboardController = {
+    getDashboardMetaData,
+    getAdminDashboard,
+    getUserStats,
+    getStudentDashboard,
+}

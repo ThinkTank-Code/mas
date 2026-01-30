@@ -1,0 +1,21 @@
+import { Settings } from './settings.model';
+import { ISettings } from './settings.interface';
+
+const getSettings = async (): Promise<ISettings | null> => {
+  return await Settings.findOne().populate('featuredEnrollmentCourse').populate('featuredEnrollmentBatch');
+};
+
+const updateSettings = async (payload: Partial<ISettings>): Promise<ISettings | null> => {
+  let settings = await Settings.findOne();
+  if (!settings) {
+    settings = new Settings(payload);
+  } else {
+    Object.assign(settings, payload);
+  }
+  return await settings.save();
+};
+
+export const SettingsService = {
+  getSettings,
+  updateSettings,
+};

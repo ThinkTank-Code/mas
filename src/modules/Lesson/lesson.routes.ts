@@ -1,0 +1,29 @@
+import express from 'express';
+import { LessonController } from './lesson.controller';
+import auth from '../../middlewares/auth';
+import { Role } from '../../types/role';
+
+const router = express.Router();
+
+// All routes require admin authentication
+router.use(auth(Role.ADMIN, Role.SUPERADMIN));
+
+// Create lesson for a module
+router.post('/modules/:moduleId/lessons', LessonController.createLesson);
+
+// Get all lessons for a module
+router.get('/modules/:moduleId/lessons', LessonController.getModuleLessons);
+
+// Reorder lessons
+router.put('/modules/:moduleId/lessons/reorder', LessonController.reorderLessons);
+
+// Get lesson by ID
+router.get('/lessons/:lessonId', LessonController.getLessonById);
+
+// Update lesson
+router.put('/lessons/:lessonId', LessonController.updateLesson);
+
+// Delete lesson
+router.delete('/lessons/:lessonId', LessonController.deleteLesson);
+
+export const LessonRoutes = router;

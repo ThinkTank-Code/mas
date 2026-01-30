@@ -1,0 +1,65 @@
+{
+  "name": "ma-server",
+  "version": "0.0.1",
+  "description": "Backend Server",
+  "main": "index.js",
+  "author": "MA",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.x"
+  },
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "seed:courses": "ts-node src/scripts/seedCourses.ts",
+    "seed:superAdmin": "ts-node src/scripts/seedsuperAdmin.ts",
+    "migrate:emailVerification": "ts-node src/scripts/migrateEmailVerification.ts",
+    "test": "jest --runInBand"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/compression": "^1.7.5",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/mongoose": "^5.11.97",
+    "@types/morgan": "^1.9.10",
+    "@types/multer": "^2.0.0",
+    "@types/node": "^22.13.1",
+    "@types/nodemailer": "^7.0.0",
+    "@types/nodemailer-express-handlebars": "^4.0.5",
+    "nodemon": "^3.1.9",
+    "pino-pretty": "^13.0.0",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "axios": "^1.11.0",
+    "bcrypt": "^6.0.0",
+    "cloudinary": "^2.8.0",
+    "compression": "^1.8.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
+    "http-status-codes": "^2.3.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.17.0",
+    "morgan": "^1.10.1",
+    "multer": "^2.0.2",
+    "nodemailer": "^7.0.5",
+    "nodemailer-express-handlebars": "^7.0.0",
+    "pino": "^9.6.0",
+    "sslcommerz-lts": "^1.1.0",
+    "uuid": "^11.1.0",
+    "zod": "^3.24.2"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  }
+}
