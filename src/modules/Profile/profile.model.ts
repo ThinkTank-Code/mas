@@ -1,0 +1,111 @@
+import { Schema, model } from 'mongoose';
+import { IProfile, IProfileModel } from './profile.interface';
+
+const enrollmentMappingSchema = new Schema({
+  enrollmentId: {
+    type: String,
+    required: true,
+  },
+  courseId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Course',
+    required: true,
+  },
+  batchId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Batch',
+    required: true,
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'payment_pending', 'active', 'completed', 'cancelled', 'suspended'],
+    required: true,
+  },
+  enrolledAt: {
+    type: Date,
+    required: true,
+  },
+  completedAt: {
+    type: Date,
+  },
+  certificateIssued: {
+    type: Boolean,
+    default: false,
+  },
+  certificateId: {
+    type: String,
+  },
+}, { _id: false });
+
+const profileSchema = new Schema<IProfile>(
+  {
+    user: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+      unique: true,
+    },
+
+    // Personal Information
+    phone: { type: String },
+    bio: { type: String },
+    address: { type: String },
+    dateOfBirth: { type: Date },
+
+    // Professional Information
+    currentJob: { type: String },
+    industry: { type: String },
+    experience: {
+      type: String,
+      enum: ['0-1', '1-3', '3-5', '5-10', '10+'],
+    },
+    company: { type: String },
+    linkedinUrl: { type: String },
+
+    // Learning Information
+    skillLevel: {
+      type: String,
+      enum: ['beginner', 'intermediate', 'advanced', 'expert'],
+    },
+    learningGoals: { type: String },
+    preferredLearningStyle: {
+      type: String,
+      enum: ['visual', 'auditory', 'kinesthetic', 'reading', 'mixed'],
+    },
+    timeZone: { type: String },
+    availability: {
+      type: String,
+      enum: ['5-10', '10-20', '20-30', '30+'],
+    },
+
+    // Interests
+    areasOfInterest: [{ type: String }],
+
+    // Preferences
+    emailNotifications: { type: Boolean, default: true },
+    pushNotifications: { type: Boolean, default: true },
+    courseReminders: { type: Boolean, default: true },
+    profileVisibility: { type: Boolean, default: true },
+
+    // Enrollment & Course Mapping (Centralized Student Data)
+    enrollments: [enrollmentMappingSchema],
+  },
+  {
+    timestamps: true,
+    toJSON: {
+      virtuals: true,
+      transform: function (doc, ret) {
+        delete (ret as any).__v;
+        return ret;
+      },
+    },
+  }
+);
+
+// Indexes for better query performance
+profileSchema.index({ 'enrollments.enrollmentId': 1 });
+profileSchema.index({ 'enrollments.courseId': 1 });
+profileSchema.index({ 'enrollments.batchId': 1 });
+profileSchema.index({ 'enrollments.status': 1 });
+
+export const ProfileModel = model<IProfile, IProfileModel>('Profile', profileSchema);

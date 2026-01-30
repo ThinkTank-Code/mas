@@ -1,0 +1,60 @@
+import "dotenv/config";
+import { z } from "zod";
+import ApiError from "../errors/ApiError";
+
+// Define the environment schema with validation
+const EnvSchema = z.object({
+    // General
+    PORT: z.string().default("5000"),
+    NODE_ENV: z.enum(["development", "production", "stage"]),
+    LOG_LEVEL: z.string().default("info"),
+    // Database
+    MONGO_URI: z.string(),
+
+    SUPER_ADMIN_EMAIL: z.string(),
+    SUPER_ADMIN_PASSWORD: z.string(),
+
+    JWT_SECRET: z.string(),
+    JWT_REFRESH_SECRET: z.string().optional().default("yourRefreshSecretKey"),
+    JWT_EXPIRY: z.string(),
+    SSL_STORE_ID: z.string(),
+    SSL_STORE_PASSWORD: z.string(),
+    SSL_IS_LIVE: z.string(),
+    SSL_PAYMENT_API: z.string(),
+    SSL_VALIDATION_API: z.string(),
+    SERVER_URL: z.string(),
+    FRONTEND_URL: z.string(),
+    // Email provider settings (optional - sensible defaults used)
+    EMAIL_USER: z.string(),
+    EMAIL_PASS: z.string(),
+    EMAIL_PROVIDER: z.string().optional(),
+    EMAIL_HOST: z.string().optional(),
+    EMAIL_PORT: z.string().optional(),
+    EMAIL_SECURE: z.string().optional(),
+    EMAIL_FROM: z.string().optional().default('"Misun Academy" <no-reply@misun-academy.com>'),
+    EMAIL_MAX_RETRIES: z.string().optional().default('3'),
+
+    // Social media group links (optional)
+    FACEBOOK_GROUP_LINK: z.string().optional(),
+    WHATSAPP_GROUP_LINK: z.string().optional(),
+
+    // Cloudinary config (required for image uploads)
+    CLOUDINARY_CLOUD_NAME: z.string(),
+    CLOUDINARY_API_KEY: z.string(),
+    CLOUDINARY_API_SECRET: z.string()
+});
+
+// Validate and parse environment variables
+const parsedEnv = EnvSchema.safeParse(process.env);
+
+if (!parsedEnv.success) {
+    const errorMessage = parsedEnv.error.issues
+        .map((issue) => `❌ ${issue.path.join(".")}: ${issue.message}`)
+        .join("\n");
+
+    throw new ApiError(500, `Environment variables validation failed:\n${errorMessage}`);
+}
+
+
+const env = parsedEnv.data;
+export default env;
