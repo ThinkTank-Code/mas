@@ -281,6 +281,56 @@ const deleteUser = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+/**
+ * Export not-enrolled users as CSV
+ * GET /api/v1/admin/users/export/not-enrolled
+ */
+const exportNotEnrolledUsers = catchAsync(async (req: Request, res: Response) => {
+    // Get all users with active or completed enrollments
+    const enrolledUserIds = await EnrollmentModel.distinct('userId', {
+        status: { $in: [EnrollmentStatus.Active, EnrollmentStatus.Completed] }
+    });
+
+    // Find users who are NOT in the enrolled list
+    const notEnrolledUsers = await UserModel.find({
+        _id: { $nin: enrolledUserIds }
+    })
+        .select('name email phone role status createdAt')
+        .sort({ createdAt: -1 })
+        .lean();
+
+    // Convert to CSV format
+    const csvHeaders = ['Name', 'Email', 'Phone', 'Role', 'Status', 'Registered Date'];
+    const csvRows = notEnrolledUsers.map(user => [
+        user.name || '',
+        user.email || '',
+        user.phone || 'N/A',
+        user.role || '',
+        user.status || '',
+        user.createdAt ? new Date(user.createdAt).toLocaleDateString() : ''
+    ]);
+
+    // Generate CSV content
+    const csvContent = [
+        csvHeaders.join(','),
+        ...csvRows.map(row => row.map(field => {
+            // Escape fields containing commas or quotes
+            const stringField = String(field);
+            if (stringField.includes(',') || stringField.includes('"') || stringField.includes('\n')) {
+                return `"${stringField.replace(/"/g, '""')}"`;
+            }
+            return stringField;
+        }).join(','))
+    ].join('\n');
+
+    // Set headers for CSV download
+    const timestamp = new Date().toISOString().split('T')[0];
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="not-enrolled-users-${timestamp}.csv"`);
+
+    res.status(200).send(csvContent);
+});
+
 export const AdminAuthController = {
     loginUser,
     getAllUsers,
@@ -289,4 +339,5 @@ export const AdminAuthController = {
     updateUser,
     updateUserStatus,
     deleteUser,
+    exportNotEnrolledUsers,
 };

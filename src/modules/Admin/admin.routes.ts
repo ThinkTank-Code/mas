@@ -51,4 +51,11 @@ router.delete(
     AdminAuthController.deleteUser
 );
 
+// Export not-enrolled users as CSV
+router.get(
+    '/users/export/not-enrolled',
+    auth(Role.ADMIN, Role.SUPERADMIN),
+    AdminAuthController.exportNotEnrolledUsers
+);
+
 export const AdminAuthRoutes = router;
